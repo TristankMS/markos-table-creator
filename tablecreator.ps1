@@ -1,6 +1,7 @@
 ##################################################################################################################
 # All credit to Marko Lauren! But try syncing his repo on a Windows system (then try deleting the file causing the problems in GitHub... nup)
 # original at: https://github.com/markolauren/sentinel/tree/main/tableCreator%20tool
+#
 # Command line usage:
 # .\tableCreator.ps1 -tableName <TableName> -newTableName <NewTableName> -type <analytics|dl|datalake|aux|auxiliary|basic> -retention <RetentionInDays> -totalRetention <TotalRetentionInDays>
 #
@@ -20,16 +21,32 @@ param (
     [string]$type,
     [int]$retention,
     [int]$totalRetention,
-    [switch]$ConvertToString
+    [switch]$ConvertToString,
+    [ValidateScript({
+        if ($_ -match '^/subscriptions/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/resourcegroups/[a-zA-Z0-9-_]+/providers/microsoft.operationalinsights/workspaces/[a-zA-Z0-9-_]+$') {
+            $true
+        } else {
+            throw "`n'$_' doesn't look like a valid full resource ID. If provided, it needs to be the full resource ID."
+        }
+    })]
+    [string] $FullResourceId # From Log Analytics Workspace, hit 'JSON View' and then the copy button at the top of the JSON pane.
 )
 
 ##################################################################################################################
+# You can edit this ResourceID to make this script easy to re-use, or provide -FullResourceId on the command line to provide it each time.
+
 $resourceId = "/subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/YOUR_RESOURCE_GROUP/providers/Microsoft.OperationalInsights/workspaces/YOUR_WORKSPACE_NAME"
+
+# use whatever the command line said, if it was set. (Rationale: easier to call from scripts; supports both advanced and noob mode.)
+if($FullResourceId){
+    $resourceId = $FullResourceId
+}
+
 ##################################################################################################################
 
 # Display the banner
 Write-Host " +=======================+"
-Write-Host " | tableCreator.ps1 v2.2 |"
+Write-Host " | tableCreator.ps1 v2.3 |"
 Write-Host " +=======================+"
 Write-Host ""
 
